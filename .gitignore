@@ -6,4 +6,4 @@ __pycache__/
 *py[cod]
 
 # Data except subfolders
-data/**/
+data/**
