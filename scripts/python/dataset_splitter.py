@@ -8,7 +8,7 @@ import click
 import pandas as pd
 from tqdm import tqdm
 
-from utils.utils import setup_logger
+from ..utils.utils import setup_logger
 
 
 def read_data(file_path: Path, file_format: Literal["csv", "txt", "xlsx"],
