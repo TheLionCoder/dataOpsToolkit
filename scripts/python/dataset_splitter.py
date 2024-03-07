@@ -44,7 +44,7 @@ def read_data(file_path: Path, file_format: Literal["csv", "txt", "xlsx"],
 def split_and_save_data(dataset: pd.DataFrame, column_category: str,
                         output_dir: Path, file_name: str,
                         output_format: Literal["csv", "txt", "xlsx"],
-                        keep_column: bool) -> None:
+                        keep_column: bool, **kwargs) -> None:
     """
     Split a dataset into multiple files based on a category column.
     :param dataset: Pandas DataFrame to split.
@@ -53,11 +53,12 @@ def split_and_save_data(dataset: pd.DataFrame, column_category: str,
     :param output_format: Format to save the files.
     :param file_name: Name of the files to save.
     :param keep_column: Whether to keep the category column in the files.
+    :param kwargs: Additional arguments to pass to the save function.
     """
     if not output_dir.exists():
         output_dir.mkdir(parents=True)
 
-    dataset = dataset.astype({"column_category": "category"})
+    dataset = dataset.astype({column_category: "category"})
     groups = dataset.groupby(by=column_category, observed=True)
 
     save_functions = {
@@ -66,13 +67,14 @@ def split_and_save_data(dataset: pd.DataFrame, column_category: str,
         "xlsx": pd.DataFrame.to_excel
     }
 
-    for group_name, group_data in tqdm(groups):
+    for group_name, group_data in tqdm(groups, desc="Saving files...",
+                                       colour="#E84855"):
         if not keep_column:
             group_data = group_data.drop(columns=[column_category])
-        file_path = output_dir / f"{file_name}_{group_name}.{output_format}"
+        file_path = output_dir.joinpath(f"{file_name}_{group_name}.{output_format}")
         try:
             save_function = save_functions[output_format]
-            save_function(group_data, file_path, index=False)
+            save_function(group_data, file_path, index=False, **kwargs)
         except KeyError:
             raise ValueError(f"File format {output_format} not supported.")
         except Exception as e:
@@ -90,13 +92,15 @@ def split_and_save_data(dataset: pd.DataFrame, column_category: str,
               required=False, default="csv")
 @click.option("--keep_column", type=bool, required=False,
               default=False)
-@click.option("--sep", type=str, required=False)
+@click.option("--sep", type=str, required=False, default="|")
 @click.option("--delimiter", type=str, required=False)
 @click.option("--dtype", type=str, required=False, default="str")
+@click.option("--output_sep", type=str, required=False, default="|",
+              help="Delimiter to use when saving a csv file.")
 def main(input_file: Path, file_format: Literal["csv", "txt", "xlsx"],
          output_dir: Path, column_category: str, file_name: str,
          output_format: Literal["csv", "txt", "xlsx"], keep_column: bool,
-         sep: str, delimiter: str, dtype=str) -> None:
+         sep: str, delimiter: str, dtype: str, output_sep: str) -> None:
     """
     Main function to split a dataset into multiple files based on a category column.
     :param input_file: File path to the dataset.
@@ -109,6 +113,7 @@ def main(input_file: Path, file_format: Literal["csv", "txt", "xlsx"],
     :param sep: Delimiter to use when reading a csv file.
     :param delimiter: Delimiter to use when reading a txt file.
     :param dtype: Data type to use when reading the file.
+    :param output_sep: Delimiter to use when saving a csv file.
     """
     kwargs = {"sep": sep, "delimiter": delimiter, "dtype": dtype}
     logger = setup_logger()
@@ -120,7 +125,8 @@ def main(input_file: Path, file_format: Literal["csv", "txt", "xlsx"],
                 f"to {output_dir} \033[0m")
     split_and_save_data(dataset=dataset, column_category=column_category,
                         output_dir=output_dir, file_name=file_name,
-                        output_format=output_format, keep_column=keep_column)
+                        output_format=output_format, keep_column=keep_column,
+                        sep=output_sep)
     logger.info("\033[92m Done! \033[0m")
 
 
