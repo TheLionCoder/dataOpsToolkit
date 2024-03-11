@@ -11,8 +11,9 @@ from tqdm import tqdm
 from ..utils.utils import setup_logger
 
 
-def read_data(file_path: Path, file_format: Literal["csv", "txt", "xlsx"],
-              **kwargs) -> pd.DataFrame:
+def read_data(
+    file_path: Path, file_format: Literal["csv", "txt", "xlsx"], **kwargs
+) -> pd.DataFrame:
     """
     Read data from a file.
 
@@ -25,11 +26,7 @@ def read_data(file_path: Path, file_format: Literal["csv", "txt", "xlsx"],
     >>> 'read_data(/some_path/some_file.txt, file_format="txt", delimiter="|")'
     >>> 'read_data(/some_path/some_file.xlsx, file_format="xlsx")'
     """
-    read_functions = {
-        "csv": pd.read_csv,
-        "txt": pd.read_csv,
-        "xlsx": pd.read_excel
-    }
+    read_functions = {"csv": pd.read_csv, "txt": pd.read_csv, "xlsx": pd.read_excel}
     try:
         read_function = read_functions[file_format]
         return read_function(file_path, **kwargs)
@@ -41,10 +38,15 @@ def read_data(file_path: Path, file_format: Literal["csv", "txt", "xlsx"],
         raise ValueError(f"Error reading file {file_path}: {e}")
 
 
-def split_and_save_data(dataset: pd.DataFrame, column_category: str,
-                        output_dir: Path, file_name: str,
-                        output_format: Literal["csv", "txt", "xlsx"],
-                        keep_column: bool, **kwargs) -> None:
+def split_and_save_data(
+    dataset: pd.DataFrame,
+    column_category: str,
+    output_dir: Path,
+    file_name: str,
+    output_format: Literal["csv", "txt", "xlsx"],
+    keep_column: bool,
+    **kwargs,
+) -> None:
     """
     Split a dataset into multiple files based on a category column.
     :param dataset: Pandas DataFrame to split.
@@ -64,11 +66,12 @@ def split_and_save_data(dataset: pd.DataFrame, column_category: str,
     save_functions = {
         "csv": pd.DataFrame.to_csv,
         "txt": pd.DataFrame.to_csv,
-        "xlsx": pd.DataFrame.to_excel
+        "xlsx": pd.DataFrame.to_excel,
     }
 
-    for group_name, group_data in tqdm(groups, desc="Saving files...",
-                                       colour="#E84855"):
+    for group_name, group_data in tqdm(
+        groups, desc="Saving files...", colour="#E84855"
+    ):
         if not keep_column:
             group_data = group_data.drop(columns=[column_category])
         file_path = output_dir.joinpath(f"{file_name}_{group_name}.{output_format}")
@@ -83,24 +86,39 @@ def split_and_save_data(dataset: pd.DataFrame, column_category: str,
 
 @click.command()
 @click.option("--input_file", type=Path, required=True)
-@click.option("--file_format", type=Literal["csv", "txt", "xlsx"],
-              required=False, default="csv")
+@click.option(
+    "--file_format", type=Literal["csv", "txt", "xlsx"], required=False, default="csv"
+)
 @click.option("--output_dir", type=Path, required=True)
 @click.option("--column_category", type=str, required=True)
 @click.option("--file_name", type=str, required=True)
-@click.option("--output_format", type=Literal["csv", "txt", "xlsx"],
-              required=False, default="csv")
-@click.option("--keep_column", type=bool, required=False,
-              default=False)
+@click.option(
+    "--output_format", type=Literal["csv", "txt", "xlsx"], required=False, default="csv"
+)
+@click.option("--keep_column", type=bool, required=False, default=False)
 @click.option("--sep", type=str, required=False, default="|")
 @click.option("--delimiter", type=str, required=False)
 @click.option("--dtype", type=str, required=False, default="str")
-@click.option("--output_sep", type=str, required=False, default="|",
-              help="Delimiter to use when saving a csv file.")
-def main(input_file: Path, file_format: Literal["csv", "txt", "xlsx"],
-         output_dir: Path, column_category: str, file_name: str,
-         output_format: Literal["csv", "txt", "xlsx"], keep_column: bool,
-         sep: str, delimiter: str, dtype: str, output_sep: str) -> None:
+@click.option(
+    "--output_sep",
+    type=str,
+    required=False,
+    default="|",
+    help="Delimiter to use when saving a csv file.",
+)
+def main(
+    input_file: Path,
+    file_format: Literal["csv", "txt", "xlsx"],
+    output_dir: Path,
+    column_category: str,
+    file_name: str,
+    output_format: Literal["csv", "txt", "xlsx"],
+    keep_column: bool,
+    sep: str,
+    delimiter: str,
+    dtype: str,
+    output_sep: str,
+) -> None:
     """
     Main function to split a dataset into multiple files based on a category column.
     :param input_file: File path to the dataset.
@@ -121,12 +139,16 @@ def main(input_file: Path, file_format: Literal["csv", "txt", "xlsx"],
     logger.info(f"\033[94m Reading data from {input_file} \033[0m")
     dataset = read_data(input_file, file_format, **kwargs)
 
-    logger.info(f"\033 93m Splitting data and saving file"
-                f"to {output_dir} \033[0m")
-    split_and_save_data(dataset=dataset, column_category=column_category,
-                        output_dir=output_dir, file_name=file_name,
-                        output_format=output_format, keep_column=keep_column,
-                        sep=output_sep)
+    logger.info(f"\033 93m Splitting data and saving file" f"to {output_dir} \033[0m")
+    split_and_save_data(
+        dataset=dataset,
+        column_category=column_category,
+        output_dir=output_dir,
+        file_name=file_name,
+        output_format=output_format,
+        keep_column=keep_column,
+        sep=output_sep,
+    )
     logger.info("\033[92m Done! \033[0m")
 
 

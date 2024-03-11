@@ -1,13 +1,11 @@
 # *-* coding: utf-8 *-*
 # !/usr/bin/env python3
 import click
-import hashlib
 from pathlib import Path
-from typing import Generator
 
 from tqdm import tqdm
 
-from ..utils.utils import setup_logger
+from ..utils.utils import compute_hash, read_file_chunks, setup_logger
 
 
 def create_hash_file(directory_path: Path, file_pattern: str) -> None:
@@ -30,36 +28,6 @@ def create_hash_file(directory_path: Path, file_pattern: str) -> None:
             hash_output.write(f"{file.name} {computed_hash}\n")
 
 
-def compute_hash(file_content: Generator[bytes, None, None]) -> str:
-    """
-    Compute Blake2b hash.
-    Args:
-        file_content: Bytes of file content.
-
-    Returns:
-        The computed SHA-256 hash.
-    """
-    hasher = hashlib.blake2b()
-    for chunk in file_content:
-        hasher.update(chunk)
-    return hasher.hexdigest()
-
-
-def read_file_chunks(file_path: Path) -> Generator[bytes, None, None]:
-    """
-    Read a file and yield its content in chunks
-    of 4086 bytes.
-    Args:
-        file_path: file path-
-
-    Returns:
-           Bytes
-    """
-    with open(file_path, "rb") as file:
-        while chunk := file.read(4096):
-            yield chunk
-
-
 @click.command()
 @click.option(
     "--source_dir",
@@ -79,7 +47,7 @@ def read_file_chunks(file_path: Path) -> Generator[bytes, None, None]:
     type=bool,
     required=False,
     default=False,
-    help="Add hash files for sub folders."
+    help="Add hash files for sub folders.",
 )
 def main(source_dir: str, file_pattern: str, sub_folders: bool) -> None:
     """
@@ -89,15 +57,19 @@ def main(source_dir: str, file_pattern: str, sub_folders: bool) -> None:
     try:
         source_path = Path(source_dir)
         if not source_path.exists() or not source_path.is_dir():
-            logger.error("\033[91m {source_dir} directory doesn't exist or "
-                         "is not readable. \033[0m")
+            logger.error(
+                "\033[91m {source_dir} directory doesn't exist or "
+                "is not readable. \033[0m"
+            )
             return
 
         all_files = list(source_path.rglob("*"))
         directories = (file for file in all_files if file.is_dir())
 
         if sub_folders:
-            for dir_path in tqdm(directories, desc="Hashing files...", colour="#E84855"):
+            for dir_path in tqdm(
+                directories, desc="Hashing files...", colour="#E84855"
+            ):
                 create_hash_file(directory_path=dir_path, file_pattern=file_pattern)
 
         create_hash_file(directory_path=source_path, file_pattern=file_pattern)
