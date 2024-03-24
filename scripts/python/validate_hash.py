@@ -20,10 +20,10 @@ def validate_hash(file_path: Path, expected_hash: str) -> bool:
 
 
 @click.command()
-@click.option("--file-path", type=str, required=True,
-              help="Path to the file to validate.")
-@click.option("--hash", type=str, required=True,
-              help="Expected hash of the file.")
+@click.option(
+    "--file-path", type=str, required=True, help="Path to the file to validate."
+)
+@click.option("--hash", type=str, required=True, help="Expected hash of the file.")
 def main(file_path: str, file_hash: str) -> None:
     """
     Main function to validate the hash of a file.
