@@ -1,5 +1,6 @@
 # *-* coding: utf-8 *-*
 # !/usr/bin/env python3
+from colorama import Fore, Style
 import click
 from pathlib import Path
 
@@ -58,8 +59,8 @@ def main(source_dir: str, file_pattern: str, sub_folders: bool) -> None:
         source_path = Path(source_dir)
         if not source_path.exists() or not source_path.is_dir():
             logger.error(
-                "\033[91m {source_dir} directory doesn't exist or "
-                "is not readable. \033[0m"
+                f"{Fore.RED}{source_dir} directory doesn't exist or "
+                f"is not readable. {Style.RESET_ALL}"
             )
             return
 
@@ -73,9 +74,9 @@ def main(source_dir: str, file_pattern: str, sub_folders: bool) -> None:
                 create_hash_file(directory_path=dir_path, file_pattern=file_pattern)
 
         create_hash_file(directory_path=source_path, file_pattern=file_pattern)
-        logger.info("\033^92m Files hashed successfully. \033[0m")
+        logger.info(f"{Fore.GREEN} Files hashed successfully. {Style.RESET_ALL}")
     except Exception as e:
-        logger.error(f"\033[91m Error in main function: {e} \033[0m")
+        logger.error(f"{Fore.RED} Error in main function: {e} {Style.RESET_ALL}")
 
 
 if __name__ == "__main__":

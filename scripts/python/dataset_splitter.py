@@ -1,9 +1,11 @@
 # *-* encoding: utf-8 *-*
 # !/usr/bin/env python3
+from os.path import expanduser
 
 from pathlib import Path
 from typing import Literal
 
+from colorama import Fore, Style
 import click
 import pandas as pd
 from tqdm import tqdm
@@ -26,7 +28,7 @@ class Config:
 
 
 def read_data(
-    config: Config(),
+    config: Config,
     file_path: Path,
     file_format: Literal["csv", "txt", "xlsx"],
     **kwargs,
@@ -55,11 +57,11 @@ def read_data(
 
 
 def split_and_save_data(
-    config: Config(),
+    config: Config,
     dataset: pd.DataFrame,
     column_category: str,
     output_dir: Path,
-    file_name: str,
+    fout_name: str,
     output_format: Literal["csv", "txt", "xlsx"],
     keep_column: bool,
     **kwargs,
@@ -71,7 +73,7 @@ def split_and_save_data(
     :param column_category: Column name to use as category.
     :param output_dir: Directory to save the files.
     :param output_format: Format to save the files.
-    :param file_name: Name of the files to save.
+    :param fout_name: Name of the files to save.
     :param keep_column: Whether to keep the category column in the files.
     :param kwargs: Additional arguments to pass to the save function.
     """
@@ -86,7 +88,7 @@ def split_and_save_data(
     ):
         if not keep_column:
             group_data = group_data.drop(columns=[column_category])
-        file_path = output_dir.joinpath(f"{file_name}_{group_name}.{output_format}")
+        file_path = output_dir.joinpath(f"{fout_name}_{group_name}.{output_format}")
         try:
             save_function = config.save_functions[output_format]
             save_function(group_data, file_path, index=False, **kwargs)
@@ -96,12 +98,20 @@ def split_and_save_data(
             raise ValueError(f"Error saving file {file_path}: {e}")
 
 
+def _to_path(path: str) -> Path:
+    """
+    Convert a string path to a Path object.
+    :param path: String path to convert.
+    :return: Path object.
+    """
+    return Path(expanduser(path)) if isinstance(path, str) else path
+
+
 @click.command()
 @click.option("--input-path", type=str, required=True, help="Path to the dataset.")
 @click.option("--file-format", type=str, required=False, default="csv")
 @click.option("--output-dir", type=str, required=True)
 @click.option("--column_category", type=str, required=True)
-@click.option("--file_name", type=str, required=True)
 @click.option("--output-format", type=str, required=False, default="csv")
 @click.option("--keep-column", type=bool, required=False, default=False)
 @click.option("--sep", type=str, required=False, default="|")
@@ -119,7 +129,6 @@ def main(
     file_format: Literal["csv", "txt", "xlsx"],
     output_dir: str,
     column_category: str,
-    file_name: str,
     output_format: Literal["csv", "txt", "xlsx"],
     keep_column: bool,
     sep: str,
@@ -133,7 +142,6 @@ def main(
     :param file_format: File format of the dataset.
     :param output_dir: Directory to save the files.
     :param column_category: Column name to use as category.
-    :param file_name: Name of the files to save.
     :param output_format: Format to save the files.
     :param keep_column: Whether to keep the category column in the files.
     :param sep: Delimiter to use when reading a csv file.
@@ -144,47 +152,50 @@ def main(
     kwargs = {"sep": sep, "delimiter": delimiter, "dtype": dtype}
     logger = setup_logger()
 
-    input_path = Path(input_path)
-    output_dir = Path(output_dir)
+    input_path = _to_path(input_path)
+    output_dir = _to_path(output_dir)
 
     config = Config()
 
-    logger.info(f"\033[94m Reading data from {input_path} \033[0m")
+    logger.info(f"{Fore.BLUE}Reading data from {input_path} {Style.RESET_ALL}")
     if input_path.is_dir():
         datasets = [
-            read_data(config, file, file_format, **kwargs)
+            (file.stem, read_data(config, file, file_format, **kwargs))
             for file in input_path.glob(f"*.{file_format}")
         ]
-        for dataset in datasets:
+        for file_name, dataset in datasets:
             logger.info(
-                f"\033[93m Splitting data and saving file" f"to {output_dir} \033[0m"
+                f"{Fore.MAGENTA}Splitting data and saving file"
+                f"to {output_dir}."
+                f" {Style.RESET_ALL}"
             )
             split_and_save_data(
                 config=config,
                 dataset=dataset,
                 column_category=column_category,
                 output_dir=output_dir,
-                file_name=file_name,
+                fout_name=file_name,
                 output_format=output_format,
                 keep_column=keep_column,
                 sep=output_sep,
             )
         else:
+            file_name = input_path.stem
             dataset = read_data(config, input_path, file_format, **kwargs)
             logger.info(
-                f"\033[94m Splitting data and saving file to {output_dir} \033[0m"
+                f"{Fore.BLUE}Splitting data and saving file to {output_dir}. {Style.RESET_ALL}"
             )
             split_and_save_data(
                 config=config,
                 dataset=dataset,
                 column_category=column_category,
                 output_dir=output_dir,
-                file_name=file_name,
+                fout_name=file_name,
                 output_format=output_format,
                 keep_column=keep_column,
                 sep=output_sep,
             )
-            logger.info("\033[92m Done! \033[0m")
+            logger.info(f"{Fore.GREEN}Done! {Style.RESET_ALL}")
 
 
 if __name__ == "__main__":
