@@ -37,7 +37,7 @@ def main(file_path: str, file_hash: str) -> None:
     Main function to validate the hash of a file.
     """
     logger = setup_logger()
-    file_path = Path(file_path)
+    file_path = Path(file_path).expanduser()
 
     if not file_path.exists():
         logger.error(f"{Fore.RED} File {file_path} does not exist. {Style.RESET_ALL}")

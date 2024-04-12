@@ -1,9 +1,9 @@
 # *-* coding: utf-8 *-*
 # !/usr/bin/env python3
-from colorama import Fore, Style
 import click
 from pathlib import Path
 
+from colorama import Fore, Style
 from tqdm import tqdm
 
 from ..utils.utils import compute_hash, read_file_chunks, setup_logger
@@ -56,7 +56,7 @@ def main(source_dir: str, file_pattern: str, sub_folders: bool) -> None:
     """
     logger = setup_logger()
     try:
-        source_path = Path(source_dir)
+        source_path = Path(source_dir).expanduser()
         if not source_path.exists() or not source_path.is_dir():
             logger.error(
                 f"{Fore.RED}{source_dir} directory doesn't exist or "

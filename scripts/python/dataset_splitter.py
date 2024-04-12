@@ -1,7 +1,5 @@
 # *-* encoding: utf-8 *-*
 # !/usr/bin/env python3
-from os.path import expanduser
-
 from pathlib import Path
 from typing import Literal
 
@@ -10,7 +8,7 @@ import click
 import pandas as pd
 from tqdm import tqdm
 
-from ..utils.utils import setup_logger
+from scripts.utils.utils import setup_logger
 
 
 class Config:
@@ -104,8 +102,8 @@ def _to_path(path: str) -> Path:
     :param path: String path to convert.
     :return: Path object.
     """
-    return Path(expanduser(path)) if isinstance(path, str) else path
-
+    if isinstance(path, str):
+        return Path(path).expanduser()
 
 @click.command()
 @click.option("--input-path", type=str, required=True, help="Path to the dataset.")
