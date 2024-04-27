@@ -13,7 +13,7 @@ from ..utils.utils import setup_logger
 
 
 def extract_zip_files(directory: str,
-                      remove_unzipped_dr: bool = False) -> None:
+                      remove_unzipped_dir: bool = False) -> None:
     """
     Unzip all files in a directory
     :directory: str: directory path
@@ -30,7 +30,7 @@ def extract_zip_files(directory: str,
             with zipfile.ZipFile(zip_path, "r") as zip_ref:
                 zip_ref.extractall(zip_path.parent)
                 logger.warning(f"Extracted {zip_path.name}")
-            if remove_unzipped_dr:
+            if remove_unzipped_dir:
                 zip_path.unlink()
                 logger.warning(f"Removed {zip_path.name}")
         logger.info(f"{Fore.GREEN} Extraction complete!{Style.RESET_ALL}")
@@ -45,7 +45,7 @@ def extract_zip_files(directory: str,
 @click.command()
 @click.option("--directory", "-d", required=True, type=str,
               help="Directory path")
-@click.option("--remove_unzipped_dr", "-r", is_flag=True,
+@click.option("--remove_unzipped_dir", "-r", is_flag=True,
               required=False, default=False,)
 def main(directory: str, remove_unzipped_dir: bool) -> None:
     """"
