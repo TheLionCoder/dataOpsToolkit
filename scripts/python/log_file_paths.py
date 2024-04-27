@@ -8,7 +8,7 @@ from colorama import Fore, Style
 from tqdm import tqdm
 import click
 
-from ..utils.utils import setup_logger
+from ..utils.utils import setup_logger, to_path
 
 
 def log_file_paths(directory: Path) -> None:
@@ -17,8 +17,9 @@ def log_file_paths(directory: Path) -> None:
     :directory: str: directory path
     """
     with open("file_paths.log", "w") as log_file:
-        for file in tqdm(directory.rglob("*"), desc="Listing files",
-                         unit="files", colour="#e84855"):
+        for file in tqdm(
+            directory.rglob("*"), desc="Listing files", unit="files", colour="#e84855"
+        ):
             log_file.write(f"{file}\n")
 
 
@@ -28,16 +29,25 @@ def count_files_by_type(directory: Path) -> Dict[str, int]:
     :directory: str: directory path
     """
     file_types_count: Dict[str, int] = {}
-    for file in tqdm(directory.rglob("*"), desc="Counting files",
-                     unit="files", colour="#e84855"):
-        file_extension: str = file.suffix
-        file_types_count[file_extension] = file_types_count.get(file_extension, 0) + 1
+    for file in tqdm(
+        directory.rglob("*"), desc="Counting files", unit="files", colour="#e84855"
+    ):
+        if file.is_file():
+            file_extension: str = file.suffix
+            file_types_count[file_extension] = (
+                file_types_count.get(file_extension, 0) + 1
+            )
     return file_types_count
 
 
 @click.command()
-@click.option("--directory", "-d", required=True, type=click.Path(exists=True),
-              help="Directory path")
+@click.option(
+    "--directory",
+    "-d",
+    required=True,
+    type=click.Path(exists=True),
+    help="Directory path",
+)
 @click.option("--verbose", "-v", is_flag=True, help="Verbose mode", default=False)
 def main(directory: str, verbose: bool) -> True:
     """
@@ -48,8 +58,7 @@ def main(directory: str, verbose: bool) -> True:
     logger = setup_logger()
     logger.info(f"{Fore.GREEN} Listing files in {directory} {Style.RESET_ALL}")
 
-    directory_path: Path = Path(directory).expanduser() \
-        if isinstance(directory, str) else directory
+    directory_path: Path = to_path(directory)
 
     try:
         if verbose:
@@ -59,7 +68,9 @@ def main(directory: str, verbose: bool) -> True:
             log_file_paths(directory_path)
         else:
             log_file_paths(directory_path)
-        logger.info(f"{Fore.MAGENTA} File paths logged in file_paths.log {Style.RESET_ALL}")
+        logger.info(
+            f"{Fore.MAGENTA} File paths logged in file_paths.log {Style.RESET_ALL}"
+        )
     except FileNotFoundError:
         logger.error(f"{Fore.RED} Directory not found {Style.RESET_ALL}")
     except Exception as e:
