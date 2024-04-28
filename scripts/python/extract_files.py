@@ -5,9 +5,9 @@ from pathlib import Path
 import zipfile
 
 from colorama import Fore, Style
-from rarfile import RarFile
 from tqdm import tqdm
 import click
+import patoolib
 
 from ..utils.utils import setup_logger, to_path
 
@@ -24,23 +24,23 @@ def extract_files(directory: str, remove_unpacked_dir: bool = False) -> None:
     try:
         logger.info(f"{Fore.BLUE} Extracting files from {dir_path}{Style.RESET_ALL}")
         for file_path in tqdm(
-            dir_path.rglob("*.{zip,rar}"),
+            dir_path.rglob("*.zip"),
             desc="Extracting files...",
             colour="green",
             unit="file",
         ):
-            if file_path.suffix == ".zip":
+            try:
                 with zipfile.ZipFile(file_path, "r") as zip_ref:
                     zip_ref.extractall(file_path.parent)
                     logger.warning(f"Extracted {file_path.name} \n")
-            else:
-                with RarFile(file_path, "r") as rar_ref:
-                    rar_ref.extractall(file_path.parent)
-                    logger.warning(f"Extracted {file_path.name} \n")
 
-            if remove_unpacked_dir:
-                file_path.unlink()
-                logger.warning(f"Removed {file_path.name} \n")
+                if remove_unpacked_dir:
+                    file_path.unlink()
+                    logger.warning(f"Removed {file_path.name} \n")
+            except zipfile.BadZipFile:
+                logger.error(f"{Fore.RED}Error:{file_path} - {zipfile.BadZipFile}{Style.RESET_ALL}")
+                continue
+
         logger.info(f"{Fore.GREEN} Extraction complete!{Style.RESET_ALL}")
     except FileNotFoundError:
         logger.error(f"{Fore.RED}Error: {FileNotFoundError}")

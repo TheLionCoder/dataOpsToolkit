@@ -16,7 +16,8 @@ def log_file_paths(directory: Path) -> None:
     List all files in a directory
     :directory: str: directory path
     """
-    with open("file_paths.log", "w") as log_file:
+    with open(directory.joinpath("file_paths.log"), "w",
+              encoding="utf-8") as log_file:
         for file in tqdm(
             directory.rglob("*"), desc="Listing files", unit="files", colour="#e84855"
         ):
@@ -32,11 +33,9 @@ def count_files_by_type(directory: Path) -> Dict[str, int]:
     for file in tqdm(
         directory.rglob("*"), desc="Counting files", unit="files", colour="#e84855"
     ):
-        if file.is_file():
+        if file.is_file() and file.suffix != ".log":
             file_extension: str = file.suffix
-            file_types_count[file_extension] = (
-                file_types_count.get(file_extension, 0) + 1
-            )
+            file_types_count[file_extension] = file_types_count.get(file_extension, 0) + 1
     return file_types_count
 
 

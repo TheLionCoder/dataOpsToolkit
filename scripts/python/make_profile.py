@@ -33,7 +33,7 @@ def make_profile_file(dataframe: pd.DataFrame, *, output_dir: Path,
         profiler = ProfileReport(df=dataframe, minimal=True, explorative=True,
                                  dark_mode=True, orange_mode=True,
                                  title=title)
-        profiler.to_file(f"{output_dir}/{title}_profile.html")
+        profiler.to_file(output_dir.joinpathf(f"{title}_profile.html"))
     else:
         dataframe: pd.DataFrame = dataframe.astype({input_col: "category"})
         grouped_data = pd.Grouper = dataframe.groupby(by=input_col, observed=True)
@@ -42,7 +42,7 @@ def make_profile_file(dataframe: pd.DataFrame, *, output_dir: Path,
             profiler = ProfileReport(df=group, minimal=True, explorative=True,
                                      dark_mode=True, orange_mode=True,
                                      title=f"{input_col} profile")
-            profiler.to_file(f"{output_dir}/{input_col}_profile.html")
+            profiler.to_file(f"{output_dir.joinpath(input_col)}_profile.html")
 
 
 @click.command()
