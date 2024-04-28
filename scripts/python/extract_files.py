@@ -7,7 +7,6 @@ import zipfile
 from colorama import Fore, Style
 from tqdm import tqdm
 import click
-import patoolib
 
 from ..utils.utils import setup_logger, to_path
 
@@ -38,7 +37,9 @@ def extract_files(directory: str, remove_unpacked_dir: bool = False) -> None:
                     file_path.unlink()
                     logger.warning(f"Removed {file_path.name} \n")
             except zipfile.BadZipFile:
-                logger.error(f"{Fore.RED}Error:{file_path} - {zipfile.BadZipFile}{Style.RESET_ALL}")
+                logger.error(
+                    f"{Fore.RED}Error:{file_path} - {zipfile.BadZipFile}{Style.RESET_ALL}"
+                )
                 continue
 
         logger.info(f"{Fore.GREEN} Extraction complete!{Style.RESET_ALL}")
