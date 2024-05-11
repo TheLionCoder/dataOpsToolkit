@@ -4,9 +4,10 @@
 from pathlib import Path
 from typing import Dict
 
+import click
+import polars as pl
 from colorama import Fore, Style
 from tqdm import tqdm
-import click
 
 from ..utils.utils import setup_logger, to_path
 
@@ -18,7 +19,7 @@ def log_file_paths(directory: Path) -> None:
     """
     with directory.joinpath("file_paths.log").open("w", encoding="utf-8") as log_file:
         for file in tqdm(
-            directory.rglob("*"), desc="Listing files", unit="files", colour="#e84855"
+                directory.rglob("*"), desc="Listing files", unit="files", colour="#e84855"
         ):
             log_file.write(f"{file}\n")
 
@@ -30,12 +31,12 @@ def count_files_by_type(directory: Path) -> Dict[str, int]:
     """
     file_types_count: Dict[str, int] = {}
     for file in tqdm(
-        directory.rglob("*"), desc="Counting files", unit="files", colour="#e84855"
+            directory.rglob("*"), desc="Counting files", unit="files", colour="#e84855"
     ):
         if file.is_file() and file.suffix != ".log":
-            file_extension: str = file.suffix
+            file_extension: str = file.suffix.lower()
             file_types_count[file_extension] = (
-                file_types_count.get(file_extension, 0) + 1
+                    file_types_count.get(file_extension, 0) + 1
             )
     return file_types_count
 
@@ -63,7 +64,8 @@ def main(directory: str, verbose: bool) -> True:
     try:
         if verbose:
             file_types_count = count_files_by_type(directory_path)
-            logger.info(f"{Fore.MAGENTA} {file_types_count} {Style.RESET_ALL}")
+            dataset: pl.DataFrame = pl.DataFrame(file_types_count)
+            logger.info(f"{Fore.MAGENTA} {dataset} {Style.RESET_ALL}")
 
             log_file_paths(directory_path)
         else:

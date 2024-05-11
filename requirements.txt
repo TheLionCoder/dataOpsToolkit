@@ -4,7 +4,9 @@ colorlog~=5.0.1
 sqlalchemy~=2.0.25
 yaml~=0.2.5
 pyyaml~=6.0.1
-tqdm~=4.65.0
+tqdm>=4.65.0
 colorama>=0.4.4
 
-rarfile>=4.0
+
+matplotlib>=3.8.4
+polars>=0.20.25
