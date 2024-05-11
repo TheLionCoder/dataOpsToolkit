@@ -25,19 +25,21 @@ def create_hash_file(directory_path: Path, file_pattern: str) -> None:
             if file.name == hash_file_name:
                 continue
             file_content_gen = read_file_chunks(file)
-            computed_hash = compute_hash(file_content_gen)
+            computed_hash = compute_hash(file_content_gen, hash_name="blake2b")
             hash_output.write(f"{file.name} {computed_hash}\n")
 
 
 @click.command()
 @click.option(
     "--source_dir",
+    "-d",
     type=str,
     required=True,
     help="Path to the directory where the files are located.",
 )
 @click.option(
     "--file_pattern",
+    "-fp",
     type=str,
     required=True,
     default="*.txt",
@@ -45,8 +47,8 @@ def create_hash_file(directory_path: Path, file_pattern: str) -> None:
 )
 @click.option(
     "--sub_folders",
-    type=bool,
-    required=False,
+    "-sf",
+    is_flag=True,
     default=False,
     help="Add hash files for sub folders.",
 )
