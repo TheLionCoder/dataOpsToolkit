@@ -64,8 +64,7 @@ def main(directory: str, verbose: bool) -> True:
     try:
         if verbose:
             file_types_count = count_files_by_type(directory_path)
-            dataset: pl.DataFrame = pl.DataFrame(file_types_count)
-            logger.info(f"{Fore.MAGENTA} {dataset} {Style.RESET_ALL}")
+            logger.info(f"{Fore.MAGENTA} {file_types_count} {Style.RESET_ALL}")
 
             log_file_paths(directory_path)
         else:

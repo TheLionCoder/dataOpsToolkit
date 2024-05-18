@@ -7,3 +7,6 @@ __pycache__/
 
 # Data except subfolders
 data/**
+
+# some Test files
+.xlsx
