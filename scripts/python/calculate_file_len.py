@@ -50,17 +50,19 @@ def main(path: Path, extension: str) -> None:
             f"{Fore.BLUE} listing files in {dir_path} with extension"
             f" {extension}. {Style.RESET_ALL}"
         )
-        for file in tqdm(
-            dir_path.rglob(f"*.{extension}"), desc="Listing files", 
-            colour="#e2a0ff"
-        ):
-            if file.is_file() and file.suffix == f".{extension}":
-                file_kind = file.name.upper()[:2]
-                file_len = calculate_file_len(file)
-                file_alias_dict[file_kind] = (file_alias_dict.get(
-                    file_kind, 0) + 1)
-                count_dict[file_kind] = count_dict.get(file_kind, 0) + file_len
-        df_file_count = pl.DataFrame(file_alias_dict)       
+        for ext in [extension.lower(), extension.upper()]:
+            for file in tqdm(
+                dir_path.rglob(f"*.{ext}"), desc="Listing files",
+                colour="#e2a0ff", unit="files", dynamic_ncols=True
+            ):
+                if file.is_file() and file.suffix == f".{ext}":
+                    file_kind = file.name.upper()[:2]
+                    file_len = calculate_file_len(file)
+                    file_alias_dict[file_kind] = (file_alias_dict.get(
+                        file_kind, 0) + 1)
+                    count_dict[file_kind] = (count_dict.get(file_kind, 0)
+                                             + file_len)
+        df_file_count = pl.DataFrame(file_alias_dict)
         df_file_len = pl.DataFrame(count_dict)
         df = df_file_count.vstack(df_file_len)
         logger.info(f"{Fore.BLUE} {df} {Style.RESET_ALL}")
