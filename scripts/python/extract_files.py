@@ -1,6 +1,6 @@
 # *-* encoding: utf-8 *-*
 # !/usr/bin/env python3
-
+from datetime import datetime
 from pathlib import Path
 import zipfile
 
@@ -20,8 +20,13 @@ def extract_files(directory: str, remove_unpacked_dir: bool = False) -> None:
     logger = setup_logger()
     dir_path: Path = to_path(directory)
 
+    if not dir_path.exists():
+        logger.error(f"{Fore.RED}Error: {dir_path} does not exist{Style.RESET_ALL}")
+        raise FileNotFoundError(f"{dir_path} does not exist")
     try:
-        logger.info(f"{Fore.BLUE} Extracting files from {dir_path}{Style.RESET_ALL}")
+        logger.info(
+            f"{Fore.BLUE} Extracting files from {dir_path}{Style.RESET_ALL}"
+        )
         for file_path in tqdm(
             dir_path.rglob("*.zip"),
             desc="Extracting files...",
@@ -29,22 +34,38 @@ def extract_files(directory: str, remove_unpacked_dir: bool = False) -> None:
             unit="file",
         ):
             try:
+                timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+                unpack_dir = file_path.parent.joinpath(
+                    f"{file_path.stem}_{timestamp}")
+                unpack_dir.mkdir(exist_ok=True)
+
                 with zipfile.ZipFile(file_path, "r") as zip_ref:
-                    zip_ref.extractall(file_path.parent)
+                    zip_ref.extractall(unpack_dir)
                     logger.warning(f"Extracted {file_path.name} \n")
 
                 if remove_unpacked_dir:
                     file_path.unlink()
                     logger.warning(f"Removed {file_path.name} \n")
+
             except zipfile.BadZipFile:
                 logger.error(
-                    f"{Fore.RED}Error:{file_path} - {zipfile.BadZipFile}{Style.RESET_ALL}"
+                    f"{Fore.RED}Error:{file_path} - "
+                    f"{zipfile.BadZipFile}{Style.RESET_ALL}"
                 )
+                bad_zip_dir = file_path.parent.joinpath(
+                    f"bad_zip_{file_path.stem}")
+                bad_zip_dir.mkdir(exist_ok=True)
+                file_path.rename(bad_zip_dir.joinpath(file_path.name))
+                logger.warning(
+                    f"Moved BadZip {file_path.name} to {unpack_dir} \n"
+                )
+
+            except FileNotFoundError:
+                logger.error(f"{Fore.RED}Error: {FileNotFoundError}-"
+                                f"{file_path.absolute()} {Style.RESET_ALL} \n")
                 continue
 
         logger.info(f"{Fore.GREEN} Extraction complete!{Style.RESET_ALL}")
-    except FileNotFoundError:
-        logger.error(f"{Fore.RED}Error: {FileNotFoundError}")
 
     except Exception as e:
         logger.error(f"{Fore.RED}Error: {e} {Style.RESET_ALL}")
@@ -52,7 +73,13 @@ def extract_files(directory: str, remove_unpacked_dir: bool = False) -> None:
 
 
 @click.command()
-@click.option("--directory", "-d", required=True, type=str, help="Directory path")
+@click.option(
+    "--directory",
+    "-d",
+    required=True,
+    type=str,
+    help="Directory path"
+)
 @click.option(
     "--remove_unpacked_dir",
     "-r",
