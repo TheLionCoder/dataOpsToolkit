@@ -52,7 +52,8 @@ def split_and_save_data(
     ):
         if not keep_column:
             group_data = group_data.drop(columns=[column_category])
-        file_path = output_dir.joinpath(f"{fout_name}_{group_name}.{output_format}")
+        file_path = output_dir.joinpath(
+            f"{fout_name}_{group_name}.{output_format}")
         try:
             save_function = config.save_functions[output_format]
             save_function(group_data, file_path, index=False, **kwargs)
@@ -63,7 +64,8 @@ def split_and_save_data(
 
 
 @click.command()
-@click.option("--input-path", type=str, required=True, help="Path to the dataset.")
+@click.option("--input-path", type=str, required=True,
+              help="Path to the dataset.")
 @click.option("--file-format", type=str, required=False, default="csv")
 @click.option("--output-dir", type=str, required=True)
 @click.option("--column_category", type=str, required=True)
@@ -92,7 +94,8 @@ def main(
     output_sep: str,
 ) -> None:
     """
-    Main function to split a dataset into multiple files based on a category column.
+    Main function to split a dataset into multiple files based on a 
+    category column.
     :param input_path: File path to the dataset.
     :param file_format: File format of the dataset.
     :param output_dir: Directory to save the files.
@@ -138,7 +141,8 @@ def main(
             file_name = input_path.stem
             dataset = read_data(config, input_path, file_format, **kwargs)
             logger.info(
-                f"{Fore.BLUE}Splitting data and saving file to {output_dir}. {Style.RESET_ALL}"
+                f"{Fore.BLUE}Splitting data and saving file"
+                f"to {output_dir}. {Style.RESET_ALL}"
             )
             split_and_save_data(
                 config=config,

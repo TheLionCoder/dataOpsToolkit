@@ -21,7 +21,8 @@ def extract_files(directory: str, remove_unpacked_dir: bool = False) -> None:
     dir_path: Path = to_path(directory)
 
     if not dir_path.exists():
-        logger.error(f"{Fore.RED}Error: {dir_path} does not exist{Style.RESET_ALL}")
+        logger.error(f"{Fore.RED}Error: {dir_path}"
+                     f"does not exist{Style.RESET_ALL}")
         raise FileNotFoundError(f"{dir_path} does not exist")
     try:
         logger.info(
@@ -62,7 +63,7 @@ def extract_files(directory: str, remove_unpacked_dir: bool = False) -> None:
 
             except FileNotFoundError:
                 logger.error(f"{Fore.RED}Error: {FileNotFoundError}-"
-                                f"{file_path.absolute()} {Style.RESET_ALL} \n")
+                             f"{file_path.absolute()} {Style.RESET_ALL} \n")
                 continue
 
         logger.info(f"{Fore.GREEN} Extraction complete!{Style.RESET_ALL}")

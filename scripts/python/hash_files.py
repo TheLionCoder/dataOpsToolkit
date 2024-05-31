@@ -73,12 +73,15 @@ def main(source_dir: str, file_pattern: str, sub_folders: bool) -> None:
             for dir_path in tqdm(
                 directories, desc="Hashing files...", colour="#E84855"
             ):
-                create_hash_file(directory_path=dir_path, file_pattern=file_pattern)
+                create_hash_file(directory_path=dir_path,
+                                 file_pattern=file_pattern)
 
         create_hash_file(directory_path=source_path, file_pattern=file_pattern)
-        logger.info(f"{Fore.GREEN} Files hashed successfully. {Style.RESET_ALL}")
+        logger.info(f"{Fore.GREEN} Files hashed successfully."
+                    f"{Style.RESET_ALL}")
     except Exception as e:
-        logger.error(f"{Fore.RED} Error in main function: {e} {Style.RESET_ALL}")
+        logger.error(f"{Fore.RED} Error in main function:"
+                     f"{e} {Style.RESET_ALL}")
 
 
 if __name__ == "__main__":

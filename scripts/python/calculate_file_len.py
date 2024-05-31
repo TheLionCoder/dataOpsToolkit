@@ -60,8 +60,8 @@ def main(path: Path, extension: str) -> None:
                 file_len = calculate_file_len(file)
                 file_alias_dict[file_kind] = (file_alias_dict.get(
                     file_kind, 0) + 1)
-                count_dict[file_kind] = (count_dict.get(file_kind, 0)
-                                            + file_len)
+                count_dict[file_kind] = (count_dict.get(
+                    file_kind, 0) + file_len)
         df_file_count = pl.DataFrame(file_alias_dict)
         df_file_len = pl.DataFrame(count_dict)
         df = df_file_count.vstack(df_file_len)
