@@ -9,12 +9,14 @@ from tqdm import tqdm
 from ..utils.utils import compute_hash, read_file_chunks, setup_logger
 
 
-def create_hash_file(directory_path: Path, file_pattern: str) -> None:
+def create_hash_file(directory_path: Path, file_pattern: str,
+                     hash_name: str = "blake2b") -> None:
     """
     Create a hash file that contains a list of files and hashes.
     Args:
         directory_path: Path to the directory where the files are located.
         file_pattern: Pattern of the files to be hashed.
+        hash_name: Hash algorithm name.
     """
     hash_file_name: str = f"01-hashes_{directory_path.name}.txt"
     hash_file_path = directory_path.joinpath(hash_file_name)
@@ -27,7 +29,7 @@ def create_hash_file(directory_path: Path, file_pattern: str) -> None:
             if not file.is_file():
                 continue
             file_content_gen = read_file_chunks(file)
-            computed_hash = compute_hash(file_content_gen, hash_name="blake2b")
+            computed_hash = compute_hash(file_content_gen, hash_name=hash_name)
             hash_output.write(f"{file.name} {computed_hash}\n")
 
 
@@ -48,13 +50,22 @@ def create_hash_file(directory_path: Path, file_pattern: str) -> None:
     help="Pattern of the files to be hashed.",
 )
 @click.option(
+    "--hash-name",
+    "-h",
+    type=str,
+    required=False,
+    default="blake2b",
+    help="Hash algorithm name.",
+)
+@click.option(
     "--sub_folders",
     "-sf",
     is_flag=True,
     default=False,
     help="Add hash files for sub folders.",
 )
-def main(source_dir: str, file_pattern: str, sub_folders: bool) -> None:
+def main(source_dir: str, file_pattern: str, sub_folders: bool,
+         hash_name: str) -> None:
     """
     Main function.
     """
@@ -76,9 +87,11 @@ def main(source_dir: str, file_pattern: str, sub_folders: bool) -> None:
                 directories, desc="Hashing files...", colour="#E84855"
             ):
                 create_hash_file(directory_path=dir_path,
-                                 file_pattern=file_pattern)
+                                 file_pattern=file_pattern,
+                                 hash_name=hash_name)
 
-        create_hash_file(directory_path=source_path, file_pattern=file_pattern)
+        create_hash_file(directory_path=source_path, file_pattern=file_pattern,
+                         hash_name=hash_name)
         logger.info(f"{Fore.GREEN} Files hashed successfully."
                     f"{Style.RESET_ALL}")
     except Exception as e:

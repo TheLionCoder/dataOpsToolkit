@@ -58,7 +58,7 @@ def extract_files(directory: str, remove_unpacked_dir: bool = False) -> None:
                 bad_zip_dir.mkdir(exist_ok=True)
                 file_path.rename(bad_zip_dir.joinpath(file_path.name))
                 logger.warning(
-                    f"Moved BadZip {file_path.name} to {unpack_dir} \n"
+                    f"Moved BadZip {file_path.name} to {bad_zip_dir} \n"
                 )
 
             except FileNotFoundError:

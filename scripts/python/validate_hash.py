@@ -35,7 +35,6 @@ def validate_hash(file_path: Path, expected_hash: str, hash_name: str) -> bool:
 @click.option("--file-hash", type=str, required=True,
               help="Expected hash of the file.")
 @click.option("--hash-name", type=str, default="blake2b", required=False,
-              default="blake2b",
               help="Hashing algorithm to use.")
 def main(file_path: str, file_hash: str, hash_name: str) -> None:
     """

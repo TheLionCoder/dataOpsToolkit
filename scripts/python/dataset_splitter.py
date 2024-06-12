@@ -55,7 +55,7 @@ def split_and_save_data(
     ):
         if not keep_column:
             group_data = group_data.drop(columns=[column_category])
-        fout_dir = output_dir.joinpath(group_name)
+        fout_dir = output_dir.joinpath(str(group_name))
         if not fout_dir.exists():
             fout_dir.mkdir(parents=True)
         file_path = fout_dir.joinpath(
@@ -67,15 +67,15 @@ def split_and_save_data(
         except KeyError:
             raise ValueError(f"File format {output_format} not supported.")
         except Exception as e:
-            raise ValueError(f"Error saving file {file_path.joinpath(group_name)}: {e}")
+            raise ValueError(f"Error saving file {file_path.joinpath(str(group_name))}: {e}")
 
 
 @click.command()
-@click.option("--input-path", "-d", type=str, required=True,
+@click.option("--input-path", type=str, required=True,
               help="Path to the dataset.")
-@click.option("--file-format", "-f", type=str, required=False, default="csv")
-@click.option("--output-dir", "-od", type=str, required=True)
-@click.option("--column-category", type=str, required=True,
+@click.option("--file-format", type=str, required=False, default="csv")
+@click.option("--output-dir", type=str, required=True)
+@click.option("--column-category", "-c", type=str, required=True,
               help="Column name to use as category to split the data.")
 @click.option("--output-format", type=str, required=False, default="csv")
 @click.option("--keep-column", is_flag=True, required=False, default=False)
