@@ -24,6 +24,8 @@ def create_hash_file(directory_path: Path, file_pattern: str) -> None:
         for file in directory_path.glob(file_pattern):
             if file.name == hash_file_name:
                 continue
+            if not file.is_file():
+                continue
             file_content_gen = read_file_chunks(file)
             computed_hash = compute_hash(file_content_gen, hash_name="blake2b")
             hash_output.write(f"{file.name} {computed_hash}\n")

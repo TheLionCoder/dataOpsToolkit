@@ -18,6 +18,11 @@ class Config:
             "txt": pd.DataFrame.to_csv,
             "xlsx": pd.DataFrame.to_excel,
         }
+        self.read_functions = {
+            "csv": pd.read_csv,
+            "txt": pd.read_csv,
+            "xlsx": pd.read_excel,
+        }
 
 
 def split_and_save_data(
@@ -41,8 +46,6 @@ def split_and_save_data(
     :param keep_column: Whether to keep the category column in the files.
     :param kwargs: Additional arguments to pass to the save function.
     """
-    if not output_dir.exists():
-        output_dir.mkdir(parents=True)
 
     dataset = dataset.astype({column_category: "category"})
     groups = dataset.groupby(by=column_category, observed=True)
@@ -52,27 +55,32 @@ def split_and_save_data(
     ):
         if not keep_column:
             group_data = group_data.drop(columns=[column_category])
-        file_path = output_dir.joinpath(
+        fout_dir = output_dir.joinpath(group_name)
+        if not fout_dir.exists():
+            fout_dir.mkdir(parents=True)
+        file_path = fout_dir.joinpath(
             f"{fout_name}_{group_name}.{output_format}")
         try:
             save_function = config.save_functions[output_format]
-            save_function(group_data, file_path, index=False, **kwargs)
+            save_function(group_data, file_path,
+                          index=False, **kwargs)
         except KeyError:
             raise ValueError(f"File format {output_format} not supported.")
         except Exception as e:
-            raise ValueError(f"Error saving file {file_path}: {e}")
+            raise ValueError(f"Error saving file {file_path.joinpath(group_name)}: {e}")
 
 
 @click.command()
-@click.option("--input-path", type=str, required=True,
+@click.option("--input-path", "-d", type=str, required=True,
               help="Path to the dataset.")
-@click.option("--file-format", type=str, required=False, default="csv")
-@click.option("--output-dir", type=str, required=True)
-@click.option("--column_category", type=str, required=True)
+@click.option("--file-format", "-f", type=str, required=False, default="csv")
+@click.option("--output-dir", "-od", type=str, required=True)
+@click.option("--column-category", type=str, required=True,
+              help="Column name to use as category to split the data.")
 @click.option("--output-format", type=str, required=False, default="csv")
-@click.option("--keep-column", type=bool, required=False, default=False)
-@click.option("--sep", type=str, required=False, default="|")
-@click.option("--delimiter", type=str, required=False)
+@click.option("--keep-column", is_flag=True, required=False, default=False)
+@click.option("--sep", "-s", type=str, required=False, default="|")
+@click.option("--delimiter", "-d",  type=str, required=False)
 @click.option("--dtype", type=str, required=False, default="str")
 @click.option(
     "--output-sep",
@@ -120,10 +128,11 @@ def main(
         datasets = [
             (file.stem, read_data(config, file, file_format, **kwargs))
             for file in input_path.glob(f"*.{file_format}")
+            if file.is_file()
         ]
         for file_name, dataset in datasets:
             logger.info(
-                f"{Fore.MAGENTA}Splitting data and saving file"
+                f"{Fore.MAGENTA}Splitting data and saving file "
                 f"to {output_dir}."
                 f" {Style.RESET_ALL}"
             )

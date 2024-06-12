@@ -34,7 +34,10 @@ def validate_hash(file_path: Path, expected_hash: str, hash_name: str) -> bool:
 )
 @click.option("--file-hash", type=str, required=True,
               help="Expected hash of the file.")
-def main(file_path: str, file_hash: str) -> None:
+@click.option("--hash-name", type=str, default="blake2b", required=False,
+              default="blake2b",
+              help="Hashing algorithm to use.")
+def main(file_path: str, file_hash: str, hash_name: str) -> None:
     """
     Main function to validate the hash of a file.
     """
@@ -46,11 +49,11 @@ def main(file_path: str, file_hash: str) -> None:
                      f"does not exist. {Style.RESET_ALL}")
         return
 
-    if validate_hash(file_path, file_hash, hash_name="blake2b"):
-        logger.info(f"{Fore.MAGENTA} Hash of {file_path}"
+    if validate_hash(file_path, file_hash, hash_name=hash_name):
+        logger.info(f"{Fore.MAGENTA} Hash of {file_path} "
                     f"is valid. {Style.RESET_ALL}")
     else:
-        logger.error(f"{Fore.RED} Hash of {file_path}"
+        logger.error(f"{Fore.RED} Hash of {file_path} "
                      f"is invalid. {Style.RESET_ALL}")
 
 
