@@ -2,7 +2,7 @@
 
 from collections import defaultdict
 from pathlib import Path
-from typing import Dict
+from typing import List
 
 from colorama import Fore, Style
 from tqdm import tqdm
@@ -11,24 +11,22 @@ import polars as pl
 
 from ..utils.utils import setup_logger, to_path
 
+pl.Config.set_tbl_cols(11)
+
 
 def calculate_file_len(file_path: Path) -> int:
     """Calculate the number of lines in a file
     :param file_path: Path to the file
     :return: Number of lines in the file"""
-    try:
-        with open(file_path, "r", encoding="utf-8") as fin:
-            buf_gen = (buf for buf in fin)
-            return sum(buf.count("\n") for buf in buf_gen)
-    except UnicodeDecodeError:
+    encodings: List[str] = ["utf-8", "iso-8859-1", "cp1252"]
+    for encode in encodings:
         try:
-            with open(file_path, "r", encoding="iso-8859-1") as fin:
+            with open(file_path, "r", encoding=encode) as fin:
                 buf_gen = (buf for buf in fin)
-                return sum(buf.count("\n") for buf in fin)
+                return sum(buf.count("\n") for buf in buf_gen)
         except UnicodeDecodeError:
-            with open(file_path, "r", encoding="cp1252") as fin:
-                buf_gen = (buf for buf in fin)
-                return sum(buf.count("\n") for buf in fin)
+            continue
+    raise ValueError(f"Unable to decode file {file_path}")
 
 
 @click.command()
@@ -43,8 +41,8 @@ def main(path: Path, extension: str) -> None:
     logger = setup_logger()
     dir_path = to_path(path)
 
-    count_dict: Dict[str, int] = defaultdict(int)
-    file_alias_dict = defaultdict(int)
+    count_dict: defaultdict = defaultdict(int)
+    file_alias_dict: defaultdict = defaultdict(int)
     try:
         logger.info(
             f"{Fore.BLUE} listing files in {dir_path} with extension"
@@ -52,7 +50,7 @@ def main(path: Path, extension: str) -> None:
         )
         for file in tqdm(
             dir_path.rglob("*"), desc="Listing files",
-            colour="#e2a0ff", unit="files", dynamic_ncols=True
+            colour="#e2a0ff", dynamic_ncols=True
         ):
             if file.is_file() and file.suffix in [f".{extension.lower()}",
                                                   f".{extension.upper()}"]:

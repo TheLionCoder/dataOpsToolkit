@@ -32,7 +32,6 @@ def extract_files(directory: str, remove_unpacked_dir: bool = False) -> None:
             dir_path.rglob("*.zip"),
             desc="Extracting files...",
             colour="green",
-            unit="file",
         ):
             try:
                 timestamp = datetime.now().strftime("%Y%m%d%H%M%S")

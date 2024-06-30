@@ -43,7 +43,6 @@ def create_hash_file(directory_path: Path, file_pattern: str,
 )
 @click.option(
     "--file_pattern",
-    "-fp",
     type=str,
     required=True,
     default="*.txt",
@@ -59,7 +58,6 @@ def create_hash_file(directory_path: Path, file_pattern: str,
 )
 @click.option(
     "--sub_folders",
-    "-sf",
     is_flag=True,
     default=False,
     help="Add hash files for sub folders.",

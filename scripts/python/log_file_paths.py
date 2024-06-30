@@ -1,6 +1,7 @@
 # *-* encoding: utf-8 *-*
 # !/usr/bin/env python3
 
+from collections import defaultdict
 from pathlib import Path
 from typing import Dict
 
@@ -20,7 +21,7 @@ def log_file_paths(directory: Path) -> None:
                             "file_paths.log").open(
                                 "w", encoding="utf-8") as log_file:
         for file in tqdm(
-                directory.rglob("*"), desc="Listing files", unit="files",
+                directory.rglob("*"), desc="Listing files",
                 colour="#e84855"
         ):
             log_file.write(f"{file}\n")
@@ -31,9 +32,9 @@ def count_files_by_type(directory: Path) -> Dict[str, int]:
     Count the number of files by type in a directory
     :directory: str: directory path
     """
-    file_types_count: Dict[str, int] = {}
+    file_types_count: defaultdict = defaultdict(int)
     for file in tqdm(
-            directory.rglob("*"), desc="Counting files", unit="files",
+            directory.rglob("*"), desc="Counting files",
             colour="#e84855"
     ):
         if file.is_file() and file.suffix != ".log":

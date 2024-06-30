@@ -39,7 +39,7 @@ def split_and_save_data(
     Split a dataset into multiple files based on a category column.
     :param config: Config object with save functions.
     :param dataset: Pandas DataFrame to split.
-    :param column_category: Column name to use as category.
+    :param column_category: Column name to use as a category.
     :param output_dir: Directory to save the files.
     :param output_format: Format to save the files.
     :param fout_name: Name of the files to save.
@@ -71,10 +71,10 @@ def split_and_save_data(
 
 
 @click.command()
-@click.option("--input-path", type=str, required=True,
+@click.option("--input-path", "-p", type=str, required=True,
               help="Path to the dataset.")
 @click.option("--file-format", type=str, required=False, default="csv")
-@click.option("--output-dir", type=str, required=True)
+@click.option("--output-dir", "-o", type=str, required=True)
 @click.option("--column-category", "-c", type=str, required=True,
               help="Column name to use as category to split the data.")
 @click.option("--output-format", type=str, required=False, default="csv")
@@ -107,7 +107,7 @@ def main(
     :param input_path: File path to the dataset.
     :param file_format: File format of the dataset.
     :param output_dir: Directory to save the files.
-    :param column_category: Column name to use as category.
+    :param column_category: Column name to use as a category.
     :param output_format: Format to save the files.
     :param keep_column: Whether to keep the category column in the files.
     :param sep: Delimiter to use when reading a csv file.

@@ -10,7 +10,7 @@ from ..utils.utils import compute_hash, read_file_chunks, setup_logger
 
 def validate_hash(file_path: Path, expected_hash: str, hash_name: str) -> bool:
     """
-    Validate the hash of a file against expected hash
+    Validate the hash of a file against the expected hash
     :file_path: path to the file.
     :expected_hash: expected hash of the file.
     :hash_name: hashing algorithm to use.
