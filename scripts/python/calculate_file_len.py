@@ -30,8 +30,10 @@ def calculate_file_len(file_path: Path) -> int:
 
 
 @click.command()
-@click.option("-p", "--path", type=str, required=True, help="Path to the directory")
-@click.option("-e", "--extension", type=str, default="txt", help="File extension")
+@click.option("--path", "-p", type=str, required=True,
+              help="Path to the directory")
+@click.option("--extension", "-e", type=str, default="txt", 
+              help="File extension")
 def main(path: Path, extension: str) -> None:
     """List files with a specific extension in a directory
     :param path: Path to the directory
@@ -39,31 +41,33 @@ def main(path: Path, extension: str) -> None:
     logger = setup_logger()
     dir_path = to_path(path)
 
-    data: defaultdict = defaultdict(defaultdict)
+    count_dict: defaultdict = defaultdict(int)
+    file_alias_dict: defaultdict = defaultdict(int)
     try:
         logger.info(
             f"{Fore.BLUE} listing files in {dir_path} with extension"
             f" {extension}. {Style.RESET_ALL}"
         )
-        for model in dir_path.iterdir():
-            if model.is_dir():
-                model_data: defaultdict = defaultdict()
-                for file_path in tqdm(model.iterdir(),
-                                      desc=f"Processing {model.name}",
-                                      colour="blue"):
-                    if file_path.is_file() and file_path.suffix == f".{extension}":
-                        try:
-                            file_name = file_path.stem
-                            model_data[file_name[:2]] = calculate_file_len(file_path)
-                        except Exception as e:
-                            logger.error(f"{Fore.RED} Error: {e} {Style.RESET_ALL}")
-                data[model.name] = model_data
-        print(data)
-        #df = pl.DataFrame(data)
-        #logger.info(f"{Fore.BLUE} {df} {Style.RESET_ALL}")
-        #df.write_excel(dir_path.joinpath("file_count.xlsx"))
+        for file in tqdm(
+            dir_path.rglob("*"), desc="Listing files",
+            colour="#e2a0ff", dynamic_ncols=True
+        ):
+            if file.is_file() and file.suffix in [f".{extension.lower()}",
+                                                  f".{extension.upper()}"]:
+                file_kind = file.name.upper()[:2]
+                file_len = calculate_file_len(file)
+                file_alias_dict[file_kind] = (file_alias_dict.get(
+                    file_kind, 0) + 1)
+                count_dict[file_kind] = (count_dict.get(
+                    file_kind, 0) + file_len)
+        df_file_count = pl.DataFrame(file_alias_dict)
+        df_file_len = pl.DataFrame(count_dict)
+        df = df_file_count.vstack(df_file_len)
+        logger.info(f"{Fore.BLUE} {df} {Style.RESET_ALL}")
+        df.write_excel(dir_path.joinpath("file_count.xlsx"))
     except FileNotFoundError:
-        logger.error(f"{Fore.RED} Directory {dir_path} " f"not Found {Style.RESET_ALL}")
+        logger.error(f"{Fore.RED} Directory {dir_path} "
+                     f"not Found {Style.RESET_ALL}")
     except Exception as e:
         logger.error(f"{Fore.RED} Error: {e} {Style.RESET_ALL}")
 
