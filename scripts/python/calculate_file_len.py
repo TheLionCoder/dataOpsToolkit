@@ -30,10 +30,8 @@ def calculate_file_len(file_path: Path) -> int:
 
 
 @click.command()
-@click.option("--path", "-p", type=str, required=True,
-              help="Path to the directory")
-@click.option("--extension", "-e", type=str, default="txt", 
-              help="File extension")
+@click.argument("-p", "--path", type=str, required=True, help="Path to the directory")
+@click.option("-e", "--extension", type=str, default="txt", help="File extension")
 def main(path: Path, extension: str) -> None:
     """List files with a specific extension in a directory
     :param path: Path to the directory
@@ -49,25 +47,26 @@ def main(path: Path, extension: str) -> None:
             f" {extension}. {Style.RESET_ALL}"
         )
         for file in tqdm(
-            dir_path.rglob("*"), desc="Listing files",
-            colour="#e2a0ff", dynamic_ncols=True
+            dir_path.rglob("*"),
+            desc="Listing files",
+            colour="#e2a0ff",
+            dynamic_ncols=True,
         ):
-            if file.is_file() and file.suffix in [f".{extension.lower()}",
-                                                  f".{extension.upper()}"]:
+            if file.is_file() and file.suffix in [
+                f".{extension.lower()}",
+                f".{extension.upper()}",
+            ]:
                 file_kind = file.name.upper()[:2]
                 file_len = calculate_file_len(file)
-                file_alias_dict[file_kind] = (file_alias_dict.get(
-                    file_kind, 0) + 1)
-                count_dict[file_kind] = (count_dict.get(
-                    file_kind, 0) + file_len)
+                file_alias_dict[file_kind] = file_alias_dict.get(file_kind, 0) + 1
+                count_dict[file_kind] = count_dict.get(file_kind, 0) + file_len
         df_file_count = pl.DataFrame(file_alias_dict)
         df_file_len = pl.DataFrame(count_dict)
         df = df_file_count.vstack(df_file_len)
         logger.info(f"{Fore.BLUE} {df} {Style.RESET_ALL}")
         df.write_excel(dir_path.joinpath("file_count.xlsx"))
     except FileNotFoundError:
-        logger.error(f"{Fore.RED} Directory {dir_path} "
-                     f"not Found {Style.RESET_ALL}")
+        logger.error(f"{Fore.RED} Directory {dir_path} " f"not Found {Style.RESET_ALL}")
     except Exception as e:
         logger.error(f"{Fore.RED} Error: {e} {Style.RESET_ALL}")
 

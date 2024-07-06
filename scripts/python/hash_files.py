@@ -9,8 +9,9 @@ from tqdm import tqdm
 from ..utils.utils import compute_hash, read_file_chunks, setup_logger
 
 
-def create_hash_file(directory_path: Path, file_pattern: str,
-                     hash_name: str = "blake2b") -> None:
+def create_hash_file(
+    directory_path: Path, file_pattern: str, hash_name: str = "blake2b"
+) -> None:
     """
     Create a hash file that contains a list of files and hashes.
     Args:
@@ -34,7 +35,7 @@ def create_hash_file(directory_path: Path, file_pattern: str,
 
 
 @click.command()
-@click.option(
+@click.argument(
     "--source_dir",
     "-d",
     type=str,
@@ -50,7 +51,6 @@ def create_hash_file(directory_path: Path, file_pattern: str,
 )
 @click.option(
     "--hash-name",
-    "-h",
     type=str,
     required=False,
     default="blake2b",
@@ -62,8 +62,7 @@ def create_hash_file(directory_path: Path, file_pattern: str,
     default=False,
     help="Add hash files for sub folders.",
 )
-def main(source_dir: str, file_pattern: str, sub_folders: bool,
-         hash_name: str) -> None:
+def main(source_dir: str, file_pattern: str, sub_folders: bool, hash_name: str) -> None:
     """
     Main function.
     """
@@ -84,17 +83,18 @@ def main(source_dir: str, file_pattern: str, sub_folders: bool,
             for dir_path in tqdm(
                 directories, desc="Hashing files...", colour="#E84855"
             ):
-                create_hash_file(directory_path=dir_path,
-                                 file_pattern=file_pattern,
-                                 hash_name=hash_name)
+                create_hash_file(
+                    directory_path=dir_path,
+                    file_pattern=file_pattern,
+                    hash_name=hash_name,
+                )
 
-        create_hash_file(directory_path=source_path, file_pattern=file_pattern,
-                         hash_name=hash_name)
-        logger.info(f"{Fore.GREEN} Files hashed successfully."
-                    f"{Style.RESET_ALL}")
+        create_hash_file(
+            directory_path=source_path, file_pattern=file_pattern, hash_name=hash_name
+        )
+        logger.info(f"{Fore.GREEN} Files hashed successfully." f"{Style.RESET_ALL}")
     except Exception as e:
-        logger.error(f"{Fore.RED} Error in main function:"
-                     f"{e} {Style.RESET_ALL}")
+        logger.error(f"{Fore.RED} Error in main function:" f"{e} {Style.RESET_ALL}")
 
 
 if __name__ == "__main__":

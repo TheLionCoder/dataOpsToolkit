@@ -58,29 +58,35 @@ def split_and_save_data(
         fout_dir = output_dir.joinpath(str(group_name))
         if not fout_dir.exists():
             fout_dir.mkdir(parents=True)
-        file_path = fout_dir.joinpath(
-            f"{fout_name}_{group_name}.{output_format}")
+        file_path = fout_dir.joinpath(f"{fout_name}_{group_name}.{output_format}")
         try:
             save_function = config.save_functions[output_format]
-            save_function(group_data, file_path,
-                          index=False, **kwargs)
+            save_function(group_data, file_path, index=False, **kwargs)
         except KeyError:
             raise ValueError(f"File format {output_format} not supported.")
         except Exception as e:
-            raise ValueError(f"Error saving file {file_path.joinpath(str(group_name))}: {e}")
+            raise ValueError(
+                f"Error saving file {file_path.joinpath(str(group_name))}: {e}"
+            )
 
 
 @click.command()
-@click.option("--input-path", "-p", type=str, required=True,
-              help="Path to the dataset.")
+@click.argument(
+    "-d", "--input-path", type=str, required=True, help="Path to the dataset."
+)
 @click.option("--file-format", type=str, required=False, default="csv")
-@click.option("--output-dir", "-o", type=str, required=True)
-@click.option("--column-category", "-c", type=str, required=True,
-              help="Column name to use as category to split the data.")
+@click.option("-o", "--output-dir", type=str, required=True)
+@click.option(
+    "-c",
+    "--column-category",
+    type=str,
+    required=True,
+    help="Column name to use as category to split the data.",
+)
 @click.option("--output-format", type=str, required=False, default="csv")
 @click.option("--keep-column", is_flag=True, required=False, default=False)
-@click.option("--sep", "-s", type=str, required=False, default="|")
-@click.option("--delimiter", "-d",  type=str, required=False)
+@click.option("-s", "--separator", type=str, required=False, default="|")
+@click.option("-d", "--delimiter", type=str, required=False)
 @click.option("--dtype", type=str, required=False, default="str")
 @click.option(
     "--output-sep",
@@ -102,7 +108,7 @@ def main(
     output_sep: str,
 ) -> None:
     """
-    Main function to split a dataset into multiple files based on a 
+    Main function to split a dataset into multiple files based on a
     category column.
     :param input_path: File path to the dataset.
     :param file_format: File format of the dataset.

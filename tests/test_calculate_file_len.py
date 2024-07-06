@@ -1,5 +1,6 @@
 # *-* encoding: utf-8 *-*
 import sys
+
 sys.path.extend([".", ".."])
 
 from click.testing import CliRunner
