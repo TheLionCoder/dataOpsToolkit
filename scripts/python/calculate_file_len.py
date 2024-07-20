@@ -39,8 +39,7 @@ def main(path: Path, extension: str) -> None:
     logger = setup_logger()
     dir_path = to_path(path)
 
-    count_dict: defaultdict = defaultdict(int)
-    file_alias_dict: defaultdict = defaultdict(int)
+    data = defaultdict(lambda: defaultdict(list))
     try:
         logger.info(
             f"{Fore.BLUE} listing files in {dir_path} with extension"
@@ -56,13 +55,12 @@ def main(path: Path, extension: str) -> None:
                 f".{extension.lower()}",
                 f".{extension.upper()}",
             ]:
-                file_kind = file.name.upper()[:2]
+                parent_file = file.parent.as_posix()
+                file_kind = file.stem.upper()[:2]
                 file_len = calculate_file_len(file)
-                file_alias_dict[file_kind] = file_alias_dict.get(file_kind, 0) + 1
-                count_dict[file_kind] = count_dict.get(file_kind, 0) + file_len
-        df_file_count = pl.DataFrame(file_alias_dict)
-        df_file_len = pl.DataFrame(count_dict)
-        df = df_file_count.vstack(df_file_len)
+                data[parent_file][file_kind].append(file_len)
+
+        df = pl.DataFrame(data)
         logger.info(f"{Fore.BLUE} {df} {Style.RESET_ALL}")
         df.write_excel(dir_path.joinpath("file_count.xlsx"))
     except FileNotFoundError:
