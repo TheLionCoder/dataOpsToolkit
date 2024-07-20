@@ -39,30 +39,29 @@ def main(path: Path, extension: str) -> None:
     logger = setup_logger()
     dir_path = to_path(path)
 
-    data = defaultdict(lambda: defaultdict(list))
+    data: defaultdict = defaultdict(defaultdict)
     try:
         logger.info(
             f"{Fore.BLUE} listing files in {dir_path} with extension"
             f" {extension}. {Style.RESET_ALL}"
         )
-        for file in tqdm(
-            dir_path.rglob("*"),
-            desc="Listing files",
-            colour="#e2a0ff",
-            dynamic_ncols=True, unit="files",
-        ):
-            if file.is_file() and file.suffix in [
-                f".{extension.lower()}",
-                f".{extension.upper()}",
-            ]:
-                parent_file = file.parent.as_posix()
-                file_kind = file.stem.upper()[:2]
-                file_len = calculate_file_len(file)
-                data[parent_file][file_kind].append(file_len)
-
-        df = pl.DataFrame(data)
-        logger.info(f"{Fore.BLUE} {df} {Style.RESET_ALL}")
-        df.write_excel(dir_path.joinpath("file_count.xlsx"))
+        for model in dir_path.iterdir():
+            if model.is_dir():
+                model_data: defaultdict = defaultdict()
+                for file_path in tqdm(model.iterdir(),
+                                      desc=f"Processing {model.name}",
+                                      colour="blue"):
+                    if file_path.is_file() and file_path.suffix == f".{extension}":
+                        try:
+                            file_name = file_path.stem
+                            model_data[file_name[:2]] = calculate_file_len(file_path)
+                        except Exception as e:
+                            logger.error(f"{Fore.RED} Error: {e} {Style.RESET_ALL}")
+                data[model.name] = model_data
+        print(data)
+        #df = pl.DataFrame(data)
+        #logger.info(f"{Fore.BLUE} {df} {Style.RESET_ALL}")
+        #df.write_excel(dir_path.joinpath("file_count.xlsx"))
     except FileNotFoundError:
         logger.error(f"{Fore.RED} Directory {dir_path} " f"not Found {Style.RESET_ALL}")
     except Exception as e:
