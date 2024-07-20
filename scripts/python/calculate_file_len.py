@@ -52,8 +52,7 @@ def main(path: Path, extension: str) -> None:
             dir_path.rglob("*"), desc="Listing files",
             colour="#e2a0ff", dynamic_ncols=True
         ):
-            if file.is_file() and file.suffix in [f".{extension.lower()}",
-                                                  f".{extension.upper()}"]:
+            if file.is_file() and file.suffix == f".{extension}":
                 file_kind = file.name.upper()[:2]
                 file_len = calculate_file_len(file)
                 file_alias_dict[file_kind] = (file_alias_dict.get(
