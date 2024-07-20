@@ -30,7 +30,7 @@ def calculate_file_len(file_path: Path) -> int:
 
 
 @click.command()
-@click.argument("-p", "--path", type=str, required=True, help="Path to the directory")
+@click.option("-p", "--path", type=str, required=True, help="Path to the directory")
 @click.option("-e", "--extension", type=str, default="txt", help="File extension")
 def main(path: Path, extension: str) -> None:
     """List files with a specific extension in a directory
@@ -50,7 +50,7 @@ def main(path: Path, extension: str) -> None:
             dir_path.rglob("*"),
             desc="Listing files",
             colour="#e2a0ff",
-            dynamic_ncols=True,
+            dynamic_ncols=True, unit="files",
         ):
             if file.is_file() and file.suffix in [
                 f".{extension.lower()}",
