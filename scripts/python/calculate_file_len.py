@@ -2,7 +2,7 @@
 
 from collections import defaultdict
 from pathlib import Path
-from typing import List
+from typing import List, Tuple
 
 from colorama import Fore, Style
 from tqdm import tqdm
@@ -10,8 +10,6 @@ import click
 import polars as pl
 
 from ..utils.utils import setup_logger, to_path
-
-pl.Config.set_tbl_cols(11)
 
 
 def calculate_file_len(file_path: Path) -> int:
@@ -29,44 +27,87 @@ def calculate_file_len(file_path: Path) -> int:
     raise ValueError(f"Unable to decode file {file_path}")
 
 
+def _validate_slice_range(
+    ctx: click.Context, param, value: str | None
+) -> None | Tuple[int, int]:
+    """Validate the slice range
+    :param ctx: Click context
+    :param param: Click parameters metadata
+    :param value: Value to validate
+    :return: Tuple of integers representing the slice range.
+    """
+    if value is None:
+        return None
+    try:
+        start, end = map(int, value.split(","))
+        return start, end
+    except ValueError:
+        raise click.BadParameter(
+            "Slice range must be two integers separated by a comma"
+        )
+
+
 @click.command()
-@click.option("--path", "-p", type=str, required=True,
-              help="Path to the directory")
-@click.option("--extension", "-e", type=str, default="txt", 
-              help="File extension")
-def main(path: Path, extension: str) -> None:
+@click.option("-p", "--path", type=str, required=True, help="Path to the directory")
+@click.option("-e", "--extension", type=str, default="txt", help="File extension")
+@click.option(
+    "--slice-name-range",
+    type=str,
+    callback=_validate_slice_range,
+    default=None,
+    help="Tuple indicating start and end of file name e.g. 0, 2",
+)
+def main(path: Path, extension: str, slice_name_range: str) -> None:
     """List files with a specific extension in a directory
     :param path: Path to the directory
-    :param extension: File extension"""
+    :param extension: File extension
+    :param slice_name_range: string indicating the start and end of the filename._Default None
+    """
     logger = setup_logger()
     dir_path = to_path(path)
 
-    count_dict: defaultdict = defaultdict(int)
-    file_alias_dict: defaultdict = defaultdict(int)
+    data = defaultdict(list)
     try:
         logger.info(
             f"{Fore.BLUE} listing files in {dir_path} with extension"
             f" {extension}. {Style.RESET_ALL}"
         )
         for file in tqdm(
-            dir_path.rglob("*"), desc="Listing files",
-            colour="#e2a0ff", dynamic_ncols=True
+            dir_path.rglob("*csv"),
+            desc="Listing files",
+            colour="#e2a0ff",
+            dynamic_ncols=True,
         ):
-            if file.is_file() and file.suffix == f".{extension}":
-                file_kind = file.name.upper()[:2]
-                file_len = calculate_file_len(file)
-                file_alias_dict[file_kind] = (file_alias_dict.get(
-                    file_kind, 0) + 1)
-                count_dict[file_kind] = (count_dict.get(
-                    file_kind, 0) + file_len)
-        df_file_count = pl.DataFrame(file_alias_dict)
-        df_file_len = pl.DataFrame(count_dict)
-        df = df_file_count.vstack(df_file_len)
+            if slice_name_range is None:
+                file_name = file.name.upper()
+            else:
+                assert len(slice_name_range) == 2, "Invalid slice range"
+                file_name = file.name.upper()[slice_name_range[0] : slice_name_range[1]]
+            file_root = file.parents[1].stem
+            file_dir = file.parent.stem
+            file_len = calculate_file_len(file)
+            data["file"].append(file_name)
+            data["root"].append(file_root)
+            data["dir"].append(file_dir)
+            data["file_count"].append(1)
+            data["file_len"].append(file_len)
+        raw_data = pl.DataFrame(
+            data,
+            schema={
+                "file": pl.String,
+                "root": pl.String,
+                "dir": pl.String,
+                "file_count": pl.UInt8,
+                "file_len": pl.UInt32,
+            },
+        )
+        df = raw_data.group_by(["file", "root", "dir"]).agg(
+            pl.sum("file_count"), pl.sum("file_len")
+        )
         logger.info(f"{Fore.BLUE} {df} {Style.RESET_ALL}")
         df.write_excel(dir_path.joinpath("file_count.xlsx"))
     except FileNotFoundError:
-        logger.error(f"{Fore.RED} Directory {dir_path} "
-                     f"not Found {Style.RESET_ALL}")
+        logger.error(f"{Fore.RED} Directory {dir_path} " f"not Found {Style.RESET_ALL}")
     except Exception as e:
         logger.error(f"{Fore.RED} Error: {e} {Style.RESET_ALL}")
 
