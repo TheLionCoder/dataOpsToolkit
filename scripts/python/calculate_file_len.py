@@ -39,7 +39,7 @@ def _validate_slice_range(
     if value is None:
         return None
     try:
-        start, end = map(int, value.split(","))
+        start, end = (int(part) if part else None for part in value.split(","))
         return start, end
     except ValueError:
         raise click.BadParameter(
@@ -75,14 +75,14 @@ def main(path: Path, extension: str, slice_name_range: str) -> None:
         for file in tqdm(
             dir_path.rglob("*csv"),
             desc="Listing files",
-            colour="#e2a0ff",
+            colour="yellow",
             dynamic_ncols=True,
         ):
             if slice_name_range is None:
-                file_name = file.name.upper()
+                file_name = file.stem.upper()
             else:
                 assert len(slice_name_range) == 2, "Invalid slice range"
-                file_name = file.name.upper()[slice_name_range[0] : slice_name_range[1]]
+                file_name = file.stem.upper()[slice_name_range[0] : slice_name_range[1]]
             file_root = file.parents[1].stem
             file_dir = file.parent.stem
             file_len = calculate_file_len(file)
