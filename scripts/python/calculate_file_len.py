@@ -12,14 +12,17 @@ import polars as pl
 from ..utils.utils import setup_logger, to_path
 
 
-def calculate_file_len(file_path: Path) -> int:
+def calculate_file_len(file_path: Path,  has_header: bool = True) -> int:
     """Calculate the number of lines in a file
     :param file_path: Path to the file
+    :param has_header: Whether the file has a header.
     :return: Number of lines in the file"""
     encodings: List[str] = ["utf-8", "iso-8859-1", "cp1252"]
     for encode in encodings:
         try:
             with open(file_path, "r", encoding=encode) as fin:
+                if has_header:
+                    next(fin)
                 buf_gen = (buf for buf in fin)
                 return sum(buf.count("\n") for buf in buf_gen)
         except UnicodeDecodeError:
@@ -50,6 +53,8 @@ def _validate_slice_range(
 @click.command()
 @click.option("-p", "--path", type=str, required=True, help="Path to the directory")
 @click.option("-e", "--extension", type=str, default="txt", help="File extension")
+@click.option("--has-header",  is_flag=True,
+              help="Whether the file has a header")
 @click.option(
     "--slice-name-range",
     type=str,
@@ -57,10 +62,11 @@ def _validate_slice_range(
     default=None,
     help="Tuple indicating start and end of file name e.g. 0, 2",
 )
-def main(path: Path, extension: str, slice_name_range: str) -> None:
+def main(path: Path, extension: str, has_header: bool,  slice_name_range: str) -> None:
     """List files with a specific extension in a directory
     :param path: Path to the directory
     :param extension: File extension
+    :param has_header: Whether the file has a header
     :param slice_name_range: string indicating the start and end of the filename._Default None
     """
     logger = setup_logger()
@@ -82,10 +88,10 @@ def main(path: Path, extension: str, slice_name_range: str) -> None:
                 file_name = file.stem.upper()
             else:
                 assert len(slice_name_range) == 2, "Invalid slice range"
-                file_name = file.stem.upper()[slice_name_range[0] : slice_name_range[1]]
+                file_name = file.stem.upper()[slice_name_range[0]: slice_name_range[1]]
             file_root = file.parents[1].stem
             file_dir = file.parent.stem
-            file_len = calculate_file_len(file)
+            file_len = calculate_file_len(file, has_header)
             data["file"].append(file_name)
             data["root"].append(file_root)
             data["dir"].append(file_dir)
@@ -105,7 +111,7 @@ def main(path: Path, extension: str, slice_name_range: str) -> None:
             pl.sum("file_count"), pl.sum("file_len")
         )
         logger.info(f"{Fore.BLUE} {df} {Style.RESET_ALL}")
-        df.write_excel(dir_path.joinpath("file_count.xlsx"))
+        df.write_excel(dir_path.joinpath(f"file_count_{dir_path.stem}.xlsx"))
     except FileNotFoundError:
         logger.error(f"{Fore.RED} Directory {dir_path} " f"not Found {Style.RESET_ALL}")
     except Exception as e:
