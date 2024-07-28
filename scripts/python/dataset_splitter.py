@@ -1,6 +1,6 @@
 # *-* encoding: utf-8 *-*
 from pathlib import Path
-from typing import List, Literal
+from typing import Callable, Dict, List, Literal
 
 import click
 import polars as pl
@@ -19,12 +19,17 @@ def split_and_save_by_category(
     category_col: str,
     output_dir: Path,
     keep_category_col: bool = False,
-    output_extension: Literal["csv", "txt"],
+    output_format: Literal["csv", "txt", "parquet", "xlsx"] = "csv",
     **kwargs,
 ):
-    for cat in tqdm(categories,
-                    desc="Saving files",
-                    colour="green"):
+    functions: Dict[str, Callable] = {
+        "csv": pl.DataFrame.write_csv,
+        "txt": pl.DataFrame.write_csv,
+        "parquet": pl.DataFrame.write_parquet,
+        "xlsx": pl.DataFrame.write_excel,
+    }
+    save_function: Callable = functions.get(output_format, pl.DataFrame.write_csv)
+    for cat in tqdm(categories, desc="Saving files", colour="green"):
         fout_dir = output_dir.joinpath(cat)
         fout_dir.mkdir(parents=True, exist_ok=True)
 
@@ -34,7 +39,7 @@ def split_and_save_by_category(
                 pl.all().exclude(category_col)
             )
         df = lazy_filtered.collect()
-        df.write_csv(fout_dir.joinpath(f"{file_name}.{output_extension}"), **kwargs)
+        save_function(df, fout_dir.joinpath(f"{file_name}.{output_format}"), **kwargs)
 
 
 @pl.StringCache()
@@ -81,8 +86,12 @@ def _extract_unique_categories(
     default=False,
     help="Either to keep the category column in the output files",
 )
-@click.option("--output-extension", type=click.Choice(["csv", "txt"]), default="csv",
-              help="Extension of the output files")
+@click.option(
+    "--output-format",
+    type=click.Choice(["csv", "txt", "parquet", "xlsx"]),
+    default="csv",
+    help="Format of the output files",
+)
 @click.option(
     "--output-separator", type=str, default="|", help="Separator for the output files"
 )
@@ -93,47 +102,60 @@ def main(
     separator: str,
     category_col: str,
     keep_category_col: bool,
+    output_format: Literal["csv", "txt", "parquet", "xlsx"],
     output_separator: str,
-    output_extension: Literal["csv", "txt"],
     output_dir: str | Path,
 ):
     input_path = to_path(input_path)
     output_dir = to_path(output_dir)
     logger = setup_logger()
     try:
-        files: List[Path] = list(input_path.rglob(f"*.{extension}")) if input_path.is_dir() else [input_path]
+        files: List[Path] = (
+            list(input_path.rglob(f"*.{extension}"))
+            if input_path.is_dir()
+            else [input_path]
+        )
         for file_path in tqdm(
             files,
             desc="Processing files",
             colour="yellow",
         ):
-            logger.info(
-                f"{Fore.BLUE} Reading file {file_path}... {Style.RESET_ALL}"
-            )
+            logger.info(f"{Fore.BLUE} Reading file {file_path}... {Style.RESET_ALL}")
             file_name: str = file_path.stem
             lazy_df: pl.LazyFrame = pl.scan_csv(
-                file_path,
-                separator=separator,
-                infer_schema=False
+                file_path, separator=separator, infer_schema=False
             )
             categories: List[str] = _extract_unique_categories(
                 lazy_df, category_col=category_col
             )
             logger.info(
-                f"{Fore.LIGHTBLUE_EX} Splitting  {file_name} in {categories}... {Style.RESET_ALL}"
+                f"{Fore.LIGHTBLUE_EX} Splitting  {file_name}"
+                f" in {categories}... {Style.RESET_ALL}"
             )
-            split_and_save_by_category(
-                lazy_df,
-                separator=output_separator,
-                categories=categories,
-                file_name=file_name,
-                category_col=category_col,
-                output_dir=output_dir,
-                keep_category_col=keep_category_col,
-                output_extension=output_extension
-            )
+            if output_format in ["csv", "txt"]:
+                split_and_save_by_category(
+                    lazy_df,
+                    separator=output_separator,
+                    categories=categories,
+                    file_name=file_name,
+                    category_col=category_col,
+                    output_dir=output_dir,
+                    keep_category_col=keep_category_col,
+                    output_format=output_format,
+                )
+            else:
+                split_and_save_by_category(
+                    lazy_df,
+                    categories=categories,
+                    file_name=file_name,
+                    category_col=category_col,
+                    output_dir=output_dir,
+                    keep_category_col=keep_category_col,
+                    output_format=output_format,
+                )
             logger.info(
-                f"{Fore.LIGHTBLUE_EX} {len(categories)} files saved in {output_dir}... {Style.RESET_ALL}"
+                f"{Fore.LIGHTBLUE_EX} {len(categories)} files saved in"
+                f" {output_dir}... {Style.RESET_ALL}"
             )
     except Exception as e:
         logger.error(f"{Fore.LIGHTRED_EX} Error: {e} {Style.RESET_ALL}")
