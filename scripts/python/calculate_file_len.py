@@ -132,7 +132,7 @@ def main(
             processed_data["file_count"].append(counts.get("file_count", 0))
             processed_data["file_len"].append(counts.get("file_len", 0))
         raw_data = pl.DataFrame(processed_data, schema=dataframe_schema)
-        grouped_df = raw_data.group_by(["parent", "file"]).agg(
+        grouped_df: pl.DataFrame = raw_data.group_by(["parent", "file"]).agg(
             pl.sum("file_count"), pl.sum("file_len")
         )
 
