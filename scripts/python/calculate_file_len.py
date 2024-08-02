@@ -54,6 +54,10 @@ def _validate_slice_range(
 @click.option("-p", "--path", type=str, required=True, help="Path to the directory")
 @click.option("-e", "--extension", type=str, default="txt", help="File extension")
 @click.option("--has-header", is_flag=True, help="Whether the file has a header")
+@click.option("-v", "--verbose", is_flag=True, help="Verbose output")
+@click.option(
+    "--include-main-dir", is_flag=True, help="Include the main directory in the output"
+)
 @click.option(
     "--slice-name-range",
     type=str,
@@ -61,56 +65,84 @@ def _validate_slice_range(
     default=None,
     help="Tuple indicating start and end of file name e.g. 0, 2",
 )
-def main(path: str | Path, extension: str, has_header: bool, slice_name_range: str) -> None:
+def main(
+    path: str | Path,
+    extension: str,
+    has_header: bool,
+    verbose: bool,
+    include_main_dir: bool,
+    slice_name_range: str,
+) -> None:
     """List files with a specific extension in a directory
     :param path: Path to the directory
     :param extension: File extension
     :param has_header: Whether the file has a header
+    :param verbose: Whether to print verbose output
+    :param include_main_dir: Whether to include the main directory in the output
     :param slice_name_range: string indicating the start and end of the filename._Default None
     """
     logger = setup_logger()
     dir_path = to_path(path)
+    fout: Path = dir_path.joinpath(f"file_count_{dir_path.stem}.xlsx")
 
-    data = defaultdict(list)
+    data = defaultdict(lambda: {"file_count": 0, "file_len": 0})
+    processed_data = {
+        "file": [],
+        "dir": [],
+        "parent": [],
+        "file_count": [],
+        "file_len": [],
+    }
+    dataframe_schema = {
+        "file": pl.String,
+        "dir": pl.String,
+        "parent": pl.String,
+        "file_count": pl.UInt8,
+        "file_len": pl.UInt32,
+    }
+
     try:
         logger.info(
             f"{Fore.BLUE} listing files in {dir_path} with extension"
             f" {extension}. {Style.RESET_ALL}"
         )
         for file in tqdm(
-            dir_path.rglob("*csv"),
+            dir_path.rglob(f"*.{extension}"),
             desc="Listing files",
             colour="yellow",
             dynamic_ncols=True,
         ):
-            if slice_name_range is None:
-                file_name = file.stem.upper()
-            else:
-                assert len(slice_name_range) == 2, "Invalid slice range"
-                file_name = file.stem.upper()[slice_name_range[0] :  slice_name_range[1]]
-            file_root = file.parents[1].stem
-            file_dir = file.parent.stem
+            file_name = (
+                file.stem.upper()[slice_name_range[0] : slice_name_range[1]]
+                if slice_name_range
+                else file.stem.upper()
+            )
+            file_dir = file.parents[1].stem
+            file_parent = file.parent.stem
             file_len = calculate_file_len(file, has_header)
-            data["file"].append(file_name)
-            data["root"].append(file_root)
-            data["dir"].append(file_dir)
-            data["file_count"].append(1)
-            data["file_len"].append(file_len)
-        raw_data = pl.DataFrame(
-            data,
-            schema={
-                "file": pl.String,
-                "root": pl.String,
-                "dir": pl.String,
-                "file_count": pl.UInt8,
-                "file_len": pl.UInt32,
-            },
-        )
-        df = raw_data.group_by(["file", "root", "dir"]).agg(
+
+            key = (file_name, file_dir, file_parent)
+            data[key]["file_count"] += 1
+            data[key]["file_len"] += file_len
+
+        for (file_name, file_dir, file_parent), counts in data.items():
+            processed_data["file"].append(file_name)
+            processed_data["dir"].append(file_dir)
+            processed_data["parent"].append(file_parent)
+            processed_data["file_count"].append(counts.get("file_count", 0))
+            processed_data["file_len"].append(counts.get("file_len", 0))
+        raw_data = pl.DataFrame(processed_data, schema=dataframe_schema)
+        grouped_df = raw_data.group_by(["parent", "file"]).agg(
             pl.sum("file_count"), pl.sum("file_len")
         )
-        logger.info(f"{Fore.BLUE} {df} {Style.RESET_ALL}")
-        df.write_excel(dir_path.joinpath(f"file_count_{dir_path.stem}.xlsx"))
+
+        df: pl.DataFrame = raw_data if include_main_dir else grouped_df
+
+        if verbose:
+            logger.info(f"{Fore.BLUE} {df} {Style.RESET_ALL}")
+
+        df.write_excel(fout)
+
     except FileNotFoundError:
         logger.error(f"{Fore.RED} Directory {dir_path} " f"not Found {Style.RESET_ALL}")
     except Exception as e:
